@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     const count = await Doctor.countDocuments();
-    const newDoctor = new Doctor({ id: D-${String(4 + count).padStart(2, '0')}, ...req.body });
+    const newDoctor = new Doctor({ id: `D-${String(4 + count).padStart(2, '0')}`, ...req.body });
     await newDoctor.save();
     res.json(newDoctor);
 });
