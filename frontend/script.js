@@ -1,64 +1,104 @@
 /* ==========================================================================
    BANANA GENERAL — HOSPITAL MANAGEMENT SYSTEM (frontend only)
    --------------------------------------------------------------------------
-   Data currently lives in memory (the `db` object below) so the UI works
-   standalone. When you wire up a backend, replace the functions inside
-   `db.api` with real `fetch()` calls to your API and keep everything else
-   the same — the rest of the app only talks to `db.api`.
+   Data now comes from the backend API (Render). The `db` object below just
+   holds the current in-memory copy of what's loaded from the server.
    ========================================================================== */
 
-const db = {
-    patients: [
-        { id: "P-1001", name: "Amina Siddiqui", age: 34, gender: "Female", condition: "Post-surgery recovery", doctorId: "D-01", status: "Admitted" },
-        { id: "P-1002", name: "Bilal Hussain", age: 58, gender: "Male", condition: "Cardiac monitoring", doctorId: "D-02", status: "Critical" },
-        { id: "P-1003", name: "Sara Malik", age: 8, gender: "Female", condition: "Fracture — left arm", doctorId: "D-03", status: "Admitted" },
-        { id: "P-1004", name: "Usman Tariq", age: 45, gender: "Male", condition: "Routine checkup", doctorId: "D-01", status: "Discharged" },
-    ],
-    doctors: [
-        { id: "D-01", name: "Dr. Ayesha Khan", specialty: "Internal Medicine", email: "ayesha.khan@banana.hospital", phone: "0300-1112223" },
-        { id: "D-02", name: "Dr. Farhan Ali", specialty: "Cardiology", email: "farhan.ali@banana.hospital", phone: "0300-4445556" },
-        { id: "D-03", name: "Dr. Hina Raza", specialty: "Orthopedics", email: "hina.raza@banana.hospital", phone: "0300-7778889" },
-    ],
-    appointments: [
-        { id: "A-01", patientId: "P-1001", doctorId: "D-01", date: todayISO(), time: "10:30", status: "Scheduled" },
-        { id: "A-02", patientId: "P-1002", doctorId: "D-02", date: todayISO(), time: "14:00", status: "Scheduled" },
-        { id: "A-03", patientId: "P-1004", doctorId: "D-01", date: addDays(-3), time: "09:00", status: "Completed" },
-    ],
-    bills: [
-        { id: "INV-501", patientId: "P-1002", amount: 45000, status: "Unpaid" },
-        { id: "INV-502", patientId: "P-1004", amount: 8000, status: "Paid" },
-    ],
+const BASE_URL = "https://hospital-management-exu3.onrender.com";
 
+const db = {
+    patients: [],
+    doctors: [],
+    appointments: [],
+    bills: [],
     counters: { patient: 1005, appt: 4, bill: 503, doctor: 4 },
 
-    // --- Swap these out for real API calls when you connect a backend ---
+    // --- Real API calls ---
     api: {
         async addPatient(data) {
-            const p = { id: `P-${db.counters.patient++}`, ...data };
-            db.patients.push(p);
-            return p;
+            const res = await fetch(`${BASE_URL}/api/patients`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+            return res.json();
         },
+
         async addDoctor(data) {
-            const d = { id: `D-${String(db.counters.doctor++).padStart(2,"0")}`, ...data };
-            db.doctors.push(d);
-            return d;
+            const res = await fetch(`${BASE_URL}/api/doctors`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+            return res.json();
         },
+
         async addAppointment(data) {
-            const a = { id: `A-${String(db.counters.appt++).padStart(2,"0")}`, status: "Scheduled", ...data };
-            db.appointments.push(a);
-            return a;
+            const res = await fetch(`${BASE_URL}/api/appointments`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+            return res.json();
         },
+
         async addBill(data) {
-            const b = { id: `INV-${db.counters.bill++}`, ...data };
-            db.bills.push(b);
-            return b;
+            const res = await fetch(`${BASE_URL}/api/bills`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+            return res.json();
         },
-        async removePatient(id) { db.patients = db.patients.filter(p => p.id !== id); },
-        async removeDoctor(id) { db.doctors = db.doctors.filter(d => d.id !== id); },
-        async cancelAppointment(id) { const a = db.appointments.find(a => a.id === id); if (a) a.status = "Cancelled"; },
-        async markBillPaid(id) { const b = db.bills.find(b => b.id === id); if (b) b.status = "Paid"; },
+
+        async removePatient(id) {
+            const res = await fetch(`${BASE_URL}/api/patients/${id}`, {
+                method: "DELETE"
+            });
+            return res.json();
+        },
+
+        async removeDoctor(id) {
+            const res = await fetch(`${BASE_URL}/api/doctors/${id}`, {
+                method: "DELETE"
+            });
+            return res.json();
+        },
+
+        async cancelAppointment(id) {
+            const res = await fetch(`${BASE_URL}/api/appointments/${id}/cancel`, {
+                method: "PATCH"
+            });
+            return res.json();
+        },
+
+        async markBillPaid(id) {
+            const res = await fetch(`${BASE_URL}/api/bills/${id}/pay`, {
+                method: "PATCH"
+            });
+            return res.json();
+        },
     }
 };
+
+async function loadAll() {
+    try {
+        const [patients, doctors, appointments, bills] = await Promise.all([
+            fetch(`${BASE_URL}/api/patients`).then(r => r.json()),
+            fetch(`${BASE_URL}/api/doctors`).then(r => r.json()),
+            fetch(`${BASE_URL}/api/appointments`).then(r => r.json()),
+            fetch(`${BASE_URL}/api/bills`).then(r => r.json()),
+        ]);
+        db.patients = patients;
+        db.doctors = doctors;
+        db.appointments = appointments;
+        db.bills = bills;
+    } catch (err) {
+        console.error("Failed to load data from backend:", err);
+        showToast("Could not connect to server.");
+    }
+}
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -78,7 +118,7 @@ function money(n) { return "Rs " + Number(n).toLocaleString("en-PK"); }
 const DEMO_USER = "admin";
 const DEMO_PASS = "banana123";
 
-document.getElementById("loginForm").addEventListener("submit", (e) => {
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const user = document.getElementById("loginUser").value.trim();
     const pass = document.getElementById("loginPass").value;
@@ -90,6 +130,7 @@ document.getElementById("loginForm").addEventListener("submit", (e) => {
         document.getElementById("app").hidden = false;
         document.getElementById("userName").textContent = "Admin";
         document.getElementById("userAvatar").textContent = "A";
+        await loadAll();
         renderAll();
     } else {
         errorEl.hidden = false;
@@ -171,6 +212,7 @@ document.getElementById("patientModal").addEventListener("submit", async(e) => {
         status: f.get("status"),
     });
     closeModal();
+    await loadAll();
     renderAll();
     showToast("Patient admitted successfully.");
 });
@@ -185,6 +227,7 @@ document.getElementById("doctorModal").addEventListener("submit", async(e) => {
         phone: f.get("phone"),
     });
     closeModal();
+    await loadAll();
     renderAll();
     showToast("Doctor added to staff.");
 });
@@ -199,6 +242,7 @@ document.getElementById("apptModal").addEventListener("submit", async(e) => {
         time: f.get("time"),
     });
     closeModal();
+    await loadAll();
     renderAll();
     showToast("Appointment booked.");
 });
@@ -212,6 +256,7 @@ document.getElementById("billModal").addEventListener("submit", async(e) => {
         status: f.get("status"),
     });
     closeModal();
+    await loadAll();
     renderAll();
     showToast("Invoice created.");
 });
@@ -281,6 +326,7 @@ function renderPatients() {
     body.querySelectorAll("[data-remove-patient]").forEach(btn => {
         btn.addEventListener("click", async() => {
             await db.api.removePatient(btn.dataset.removePatient);
+            await loadAll();
             renderAll();
             showToast("Patient record removed.");
         });
@@ -302,6 +348,7 @@ function renderDoctors() {
     grid.querySelectorAll("[data-remove-doctor]").forEach(btn => {
         btn.addEventListener("click", async() => {
             await db.api.removeDoctor(btn.dataset.removeDoctor);
+            await loadAll();
             renderAll();
             showToast("Doctor removed from staff.");
         });
@@ -326,7 +373,9 @@ function renderAppointments() {
   body.querySelectorAll("[data-cancel-appt]").forEach(btn => {
     btn.addEventListener("click", async () => {
       await db.api.cancelAppointment(btn.dataset.cancelAppt);
-      renderAll(); showToast("Appointment cancelled.");
+      await loadAll();
+      renderAll();
+      showToast("Appointment cancelled.");
     });
   });
 }
@@ -347,7 +396,9 @@ function renderBilling(){
   body.querySelectorAll("[data-mark-paid]").forEach(btn => {
     btn.addEventListener("click", async () => {
       await db.api.markBillPaid(btn.dataset.markPaid);
-      renderAll(); showToast("Invoice marked as paid.");
+      await loadAll();
+      renderAll();
+      showToast("Invoice marked as paid.");
     });
   });
 }
