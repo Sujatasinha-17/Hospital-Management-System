@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     const count = await Bill.countDocuments();
-    const newBill = new Bill({ id: INV-${503 + count}, ...req.body });
+    const newBill = new Bill({ id: `INV-${503 + count}`, ...req.body });
     await newBill.save();
     res.json(newBill);
 });
