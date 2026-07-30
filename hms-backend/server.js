@@ -14,7 +14,11 @@ app.use(express.json());
 app.get('/', (req, res) => {
     res.send('Apollo General HMS backend is running ✅');
 });
-
+// Routes
+app.use('/api/patients', require('./routes/patients'));
+app.use('/api/doctors', require('./routes/doctors'));
+app.use('/api/appointments', require('./routes/appointments'));
+app.use('/api/bills', require('./routes/bills'));
 
 
 // MongoDB connect
