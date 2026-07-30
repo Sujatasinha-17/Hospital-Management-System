@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     const count = await Appointment.countDocuments();
-    const newAppt = new Appointment({ id: A-${String(4 + count).padStart(2, '0')}, status: 'Scheduled', ...req.body });
+    const newAppt = new Appointment({ id: `A-${String(4 + count).padStart(2, '0')}`, status: 'Scheduled', ...req.body });
     await newAppt.save();
     res.json(newAppt);
 });
