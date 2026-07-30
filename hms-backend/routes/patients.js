@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     const count = await Patient.countDocuments();
-    const newPatient = new Patient({ id: 'P-${1005 + count}', ...req.body });
+    const newPatient = new Patient({ id: `P-${1005 + count}`, ...req.body });
     await newPatient.save();
     res.json(newPatient);
 });
