@@ -15,11 +15,7 @@ app.get('/', (req, res) => {
     res.send('Apollo General HMS backend is running ✅');
 });
 
-// Routes (will connect these later, one by one)
-// app.use('/api/patients', require('./routes/patients'));
-// app.use('/api/doctors', require('./routes/doctors'));
-// app.use('/api/appointments', require('./routes/appointments'));
-// app.use('/api/bills', require('./routes/bills'));
+
 
 // MongoDB connect
 mongoose.connect(process.env.MONGO_URI)
